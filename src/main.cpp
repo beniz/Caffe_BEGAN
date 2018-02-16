@@ -6,10 +6,10 @@
 #include <thread>
 #include <sstream>
 
-#include <opencv2/core.hpp>
-#include <opencv2/imgproc.hpp>
-#include <opencv2/imgcodecs.hpp>
-#include <opencv2/highgui.hpp>
+#include <opencv2/core/core.hpp>
+#include <opencv2/imgproc/imgproc.hpp>
+//#include <opencv2/imgcodecs.hpp>
+#include <opencv2/highgui/highgui.hpp>
 
 #include <boost/filesystem.hpp>
 #include <boost/algorithm/string/predicate.hpp>
@@ -62,7 +62,7 @@ void LoadImagesFromFiles(const std::vector<std::string> &files_path, const std::
 
 		if (img_crop.cols != image_size || img_crop.rows != image_size)
 		{
-			cv::resize(img_crop, img_crop, cv::Size(image_size, image_size), 0.0, 0.0, cv::InterpolationFlags::INTER_LINEAR);
+			cv::resize(img_crop, img_crop, cv::Size(image_size, image_size), 0.0, 0.0, cv::INTER_LINEAR);
 		}
 
 		img_crop.convertTo(img_float, CV_32FC3);
@@ -705,19 +705,19 @@ int main(int argc, char** argv)
 #endif
 
 	gflags::ParseCommandLineFlags(&argc, &argv, true);
-	google::InitGoogleLogging(argv[0]);
+	//google::InitGoogleLogging(argv[0]);
 
 	//In test mode we don't need all the caffe stuff
 	if (!FLAGS_train)
 	{
-		for (int i = 0; i < google::NUM_SEVERITIES; ++i)
+	  /*for (int i = 0; i < google::NUM_SEVERITIES; ++i)
 		{
 			google::SetLogDestination(i, "");
-		}
+			}*/
 	}
 	else
 	{
-		google::LogToStderr();
+	  //google::LogToStderr();
 	}
 
 	std::mt19937 random_gen = std::mt19937(std::chrono::high_resolution_clock::now().time_since_epoch().count());
@@ -810,9 +810,10 @@ int main(int argc, char** argv)
 		std::vector<std::vector<float> > *loading_data;
 
 		//Number of epochs
+		int iter = 0;
 		for (int epoch = FLAGS_start_epoch; epoch < FLAGS_end_epoch; ++epoch)
 		{
-			//Shuffle the indices of the images
+		  //Shuffle the indices of the images
 			std::vector<int> indices;
 			indices.reserve(data_files_path.size());
 
@@ -833,6 +834,8 @@ int main(int argc, char** argv)
 
 			for (int batch = 0; batch < number_of_batch_in_epoch; ++batch)
 			{
+			  std::cerr << "epoch=" << epoch << " / iter=" << iter << "\r";
+			  ++iter;
 				//If there is a need to change the data vector
 				if (batch % FLAGS_number_batch_loaded == 0)
 				{
@@ -841,7 +844,7 @@ int main(int argc, char** argv)
 					loading_data = (loading_data == &real_data_1) ? &real_data_2 : &real_data_1;
 					int start_index = ((batch / FLAGS_number_batch_loaded) + 1) * FLAGS_number_batch_loaded * FLAGS_batch_size;
 					int end_index = ((batch / FLAGS_number_batch_loaded) + 2) * FLAGS_number_batch_loaded * FLAGS_batch_size;
-					end_index = std::min((unsigned long long)end_index, indices.size());
+					end_index = std::min((unsigned long long)end_index, (unsigned long long)indices.size());
 					if (start_index < end_index)
 					{
 						std::thread local_thread_loading(LoadImagesFromFiles, data_files_path, std::vector<int>(indices.begin() + start_index, indices.begin() + end_index), loading_data, FLAGS_image_size);
@@ -976,7 +979,7 @@ int main(int argc, char** argv)
 
 			if (FLAGS_save_img)
 			{
-				cv::imwrite("Generated_" + std::to_string(index) + ".bmp", interpolation);
+				cv::imwrite("Generated_" + std::to_string(index) + ".png", interpolation);
 			}
 
 			interpolation /= 255.0f;

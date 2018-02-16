@@ -81,7 +81,7 @@ NN_Agent::NN_Agent(const std::string &solver_generator_,
 
 	if (solver_discriminator->iter() > 0 || solver_generator->iter() > 0)
 	{
-		log_file.open(log_filename, std::ofstream::out|std::ofstream::app);
+	  log_file.open(log_filename, std::ofstream::out|std::ofstream::app);
 	}
 	else
 	{
