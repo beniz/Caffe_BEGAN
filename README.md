@@ -26,6 +26,13 @@ I have only tested this code on Windows with Visual Studio 2015, but it should a
 The project uses CMake as a building tool.
 Once you have correctly built and compiled the code, you should be abble to launch the program for both training and testing.
 
+```
+export CAFFE_ROOT=/path/to/caffe
+mkdir build
+cd build
+cmake .. -DCAFFE_INC_DIR="$CAFFE_ROOT/include/;$CAFFE_ROOT/.build_release/src/" -DCAFFE_LIB="$CAFFE_ROOT/.build_release/lib/libcaffe.so"
+```
+
 
 ## Testing
 
