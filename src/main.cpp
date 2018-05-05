@@ -748,13 +748,20 @@ int main(int argc, char** argv)
 			return -1;
 		}
 
-		for (boost::filesystem::directory_entry &file : boost::filesystem::directory_iterator(folder_data))
+		/*for (boost::filesystem::directory_entry &file : boost::filesystem::directory_iterator(folder_data))
 		{
 			if (boost::ends_with(file.path().string(), ".jpg") || boost::ends_with(file.path().string(), ".png") || boost::ends_with(file.path().string(), ".jpeg") || boost::ends_with(file.path().string(), ".bmp"))
 			{
 				data_files_path.push_back(file.path().string());
 			}
-		}
+			}*/
+		boost::filesystem::recursive_directory_iterator it(folder_data), end;
+		for (auto& entry : boost::make_iterator_range(it, end))
+		  {
+		    //std::cerr << "entry=" << entry.path().native() << std::endl;
+		    if (is_regular(entry))
+		      data_files_path.push_back(entry.path().native());
+		  }
 
 		std::vector<std::vector<float> > generator_input_test;
 

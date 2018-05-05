@@ -134,7 +134,7 @@ void NN_Agent::Train(const std::vector<std::vector<float> > &generator_input, co
 	//Add the generator loss part to the diffs -k_t*L(G(z))
 	if (k_t != 0.0f)
 	{
-		net_discriminator->BackwardFromTo(net_discriminator->layers().size() - 1, net_discriminator->layers().size() - 4);
+	  net_discriminator->BackwardFromTo(net_discriminator->layers().size() - 1, net_discriminator->layers().size() - 4); // beniz: because no loss l1 in caffe, built with 4 layers
 		caffe::caffe_scal(regenerated_discriminator->count(), -k_t, regenerated_discriminator->mutable_cpu_diff());
 		net_discriminator->BackwardFrom(net_discriminator->layers().size() - 5);
 	}
