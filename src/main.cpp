@@ -35,6 +35,7 @@ DEFINE_int32(number_batch_loaded, 50, "Number of batch of images loaded in the m
 DEFINE_int32(start_epoch, 0, "Epoch number to start training");
 DEFINE_int32(end_epoch, 50, "Epoch number to train on");
 DEFINE_string(training_dataset, "../Data/CelebA", "Dataset in which the training images are");
+DEFINE_int32(gpuid, 0, "GPU id");
 
 //Testing flags
 DEFINE_int32(save_img, 0, "1 to save the generated faces as bmp, 0 to just display them");
@@ -698,13 +699,15 @@ void CreateDiscriminatorPrototxt(const int &batch_size, const int &h_dim, const 
 
 int main(int argc, char** argv)
 {
+  gflags::ParseCommandLineFlags(&argc, &argv, true);
 #ifdef CPU_ONLY
 	caffe::Caffe::set_mode(caffe::Caffe::CPU);
 #else
 	caffe::Caffe::set_mode(caffe::Caffe::GPU);
+	caffe::Caffe::SetDevice(FLAGS_gpuid);
+	caffe::Caffe::DeviceQuery();
 #endif
 
-	gflags::ParseCommandLineFlags(&argc, &argv, true);
 	//google::InitGoogleLogging(argv[0]);
 
 	//In test mode we don't need all the caffe stuff
