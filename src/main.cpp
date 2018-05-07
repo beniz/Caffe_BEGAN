@@ -22,6 +22,7 @@ DEFINE_int32(h_dim, 64, "Dimension of the encoded features for discriminator");
 DEFINE_int32(hidden_dim, 64, "Internal dimension in nets (n in the paper)");
 DEFINE_int32(image_size, 64, "Size of the images (16, 32, 64, 128)");
 DEFINE_int32(batch_size, 16, "Number of samples in one pass");
+DEFINE_string(model_repository,"","Model repository");
 
 //Training flags
 DEFINE_string(solver_gen, "solver_generator.prototxt", "Caffe solver file for generator");
@@ -36,6 +37,7 @@ DEFINE_int32(start_epoch, 0, "Epoch number to start training");
 DEFINE_int32(end_epoch, 50, "Epoch number to train on");
 DEFINE_string(training_dataset, "../Data/CelebA", "Dataset in which the training images are");
 DEFINE_int32(gpuid, 0, "GPU id");
+DEFINE_string(model_name, "began", "model name");
 
 //Testing flags
 DEFINE_int32(save_img, 0, "1 to save the generated faces as bmp, 0 to just display them");
@@ -91,7 +93,7 @@ void LoadImagesFromFiles(const std::vector<std::string> &files_path, const std::
 */
 void CreateGeneratorPrototxt(const int &batch_size, const int &z_dim, const int &hidden_dim, const int &image_size)
 {
-	std::ofstream prototxt("generator.prototxt");
+	std::ofstream prototxt(FLAGS_model_repository + "/generator.prototxt");
 
 	//Net header
 	prototxt
@@ -288,7 +290,7 @@ void CreateGeneratorPrototxt(const int &batch_size, const int &z_dim, const int 
 */
 void CreateDiscriminatorPrototxt(const int &batch_size, const int &h_dim, const int &hidden_dim, const int &image_size)
 {
-	std::ofstream prototxt("discriminator.prototxt");
+	std::ofstream prototxt(FLAGS_model_repository + "/discriminator.prototxt");
 
 	//Net header
 	prototxt
@@ -768,7 +770,7 @@ int main(int argc, char** argv)
 		if ((FLAGS_snapshot_generator.empty() && FLAGS_snapshot_discriminator.empty()) || FLAGS_preview_generator.empty())
 		{
 			std::string file_name = FLAGS_preview_generator.empty() ? "preview_values.csv" : FLAGS_preview_generator;
-			std::ofstream preview_values_file(file_name);
+			std::ofstream preview_values_file(FLAGS_model_repository + "/" + file_name);
 
 			for (int i = 0; i < 16; ++i)
 			{
@@ -886,7 +888,7 @@ int main(int argc, char** argv)
 
 						current_output.copyTo(output(cv::Rect((i % 4) * FLAGS_image_size, (i / 4) * FLAGS_image_size, FLAGS_image_size, FLAGS_image_size)));
 					}
-					std::string image_name = "Generation_epoch_" + std::to_string(epoch);
+					std::string image_name = FLAGS_model_repository + "/" + FLAGS_model_name + "_generation_epoch_" + std::to_string(epoch);
 
 					if (index > 0)
 					{
@@ -938,14 +940,14 @@ int main(int argc, char** argv)
 			current_output.copyTo(output(cv::Rect((i % 4) * FLAGS_image_size, (i / 4) * FLAGS_image_size, FLAGS_image_size, FLAGS_image_size)));
 		}
 
-		cv::imwrite("Fully_Trained.bmp", output);
+		cv::imwrite(FLAGS_model_repository + "/Fully_Trained.bmp", output);
 
 		return 0;
 	}
 	//Test
 	else
 	{
-		NN_Agent net("generator.prototxt", FLAGS_weights_gen);
+		NN_Agent net(FLAGS_model_repository + "/generator.prototxt", FLAGS_weights_gen);
 
 		int index = 0;
 		while (index != FLAGS_num_gen)
