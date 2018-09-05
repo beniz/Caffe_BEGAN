@@ -22,14 +22,15 @@ DEFINE_int32(h_dim, 64, "Dimension of the encoded features for discriminator");
 DEFINE_int32(hidden_dim, 64, "Internal dimension in nets (n in the paper)");
 DEFINE_int32(image_size, 64, "Size of the images (16, 32, 64, 128)");
 DEFINE_int32(batch_size, 16, "Number of samples in one pass");
+DEFINE_int32(iter_size, 1, "Number of iterations with batch size");
 DEFINE_string(model_repository,"","Model repository");
 
 //Training flags
 DEFINE_string(solver_gen, "solver_generator.prototxt", "Caffe solver file for generator");
 DEFINE_string(solver_discr, "solver_discriminator.prototxt", "Caffe solver file for discriminator");
 DEFINE_string(weights_discr, "", "Trained weights to load into the discriminator net (.caffemodel)");
-DEFINE_string(snapshot_generator, "", "Snaphsot file to resume generator training (*.solverstate)");
-DEFINE_string(snapshot_discriminator, "", "Snaphsot file to resume discriminator training (*.solverstate)");
+DEFINE_string(snapshot_generator, "", "Snapshot file to resume generator training (*.solverstate)");
+DEFINE_string(snapshot_discriminator, "", "Snapshot file to resume discriminator training (*.solverstate)");
 DEFINE_string(snapshot_k_t, "", "Snapshot file to set starting k_t value");
 DEFINE_string(preview_generator, "preview_values.csv", "File in which saving the generator input to see training evolution");
 DEFINE_int32(number_batch_loaded, 50, "Number of batch of images loaded in the memory at the same time.");
@@ -734,7 +735,7 @@ int main(int argc, char** argv)
 	{
 		CreateDiscriminatorPrototxt(FLAGS_batch_size, FLAGS_h_dim, FLAGS_hidden_dim, FLAGS_image_size);
 
-		NN_Agent nets(FLAGS_solver_gen, FLAGS_solver_discr, FLAGS_snapshot_generator, FLAGS_snapshot_discriminator, FLAGS_snapshot_k_t, FLAGS_weights_gen, FLAGS_weights_discr, "log.csv", 0.001f, 0.5f);
+		NN_Agent nets(FLAGS_solver_gen, FLAGS_solver_discr, FLAGS_snapshot_generator, FLAGS_snapshot_discriminator, FLAGS_snapshot_k_t, FLAGS_weights_gen, FLAGS_weights_discr, FLAGS_model_repository + "/log.csv", 0.001f, 0.5f);
 
 		std::cout << "Networks ready. Reading data ..." << std::endl;
 
@@ -811,7 +812,7 @@ int main(int argc, char** argv)
 			}
 		}
 
-		int number_of_batch_in_epoch = data_files_path.size() / FLAGS_batch_size;
+		int number_of_batch_in_epoch = data_files_path.size() / (FLAGS_batch_size * FLAGS_iter_size);
 
 		//Alternate training on these two vectors for loading images while training
 		std::vector<std::vector<float> > real_data_1;
@@ -839,7 +840,7 @@ int main(int argc, char** argv)
 			//At the begining of an epoch, load a first part of the dataset into the first vector
 			used_data = &real_data_2;
 			loading_data = &real_data_1;
-			std::thread thread_loading(LoadImagesFromFiles, data_files_path, std::vector<int>(indices.begin(), indices.begin() + 1 * FLAGS_number_batch_loaded * FLAGS_batch_size), loading_data, FLAGS_image_size);
+			std::thread thread_loading(LoadImagesFromFiles, data_files_path, std::vector<int>(indices.begin(), indices.begin() + 1 * FLAGS_number_batch_loaded * FLAGS_batch_size * FLAGS_iter_size), loading_data, FLAGS_image_size);
 
 			int index = 0;
 			int fifth_of_epoch = 1;
@@ -854,8 +855,8 @@ int main(int argc, char** argv)
 					thread_loading.join();
 					used_data = (used_data == &real_data_1) ? &real_data_2 : &real_data_1;
 					loading_data = (loading_data == &real_data_1) ? &real_data_2 : &real_data_1;
-					int start_index = ((batch / FLAGS_number_batch_loaded) + 1) * FLAGS_number_batch_loaded * FLAGS_batch_size;
-					int end_index = ((batch / FLAGS_number_batch_loaded) + 2) * FLAGS_number_batch_loaded * FLAGS_batch_size;
+					int start_index = ((batch / FLAGS_number_batch_loaded) + 1) * FLAGS_number_batch_loaded * FLAGS_batch_size * FLAGS_iter_size;
+					int end_index = ((batch / FLAGS_number_batch_loaded) + 2) * FLAGS_number_batch_loaded * FLAGS_batch_size * FLAGS_iter_size;
 					end_index = std::min((unsigned long long)end_index, (unsigned long long)indices.size());
 					if (start_index < end_index)
 					{
@@ -878,6 +879,7 @@ int main(int argc, char** argv)
 					{
 						cv::Mat current_output;
 
+						// merging RGB predictions
 						std::vector<cv::Mat> rebuilt_channels;
 						rebuilt_channels.push_back(cv::Mat(FLAGS_image_size, FLAGS_image_size, CV_32FC1, gen_output[i].data()));
 						rebuilt_channels.push_back(cv::Mat(FLAGS_image_size, FLAGS_image_size, CV_32FC1, gen_output[i].data() + FLAGS_image_size * FLAGS_image_size));
@@ -899,7 +901,7 @@ int main(int argc, char** argv)
 					cv::imwrite(image_name, output);
 				}
 
-				std::vector<std::vector<float> > current_batch_data(used_data->begin() + (batch % FLAGS_number_batch_loaded) * FLAGS_batch_size, used_data->begin() + ((batch % FLAGS_number_batch_loaded) + 1) * FLAGS_batch_size);
+				std::vector<std::vector<float> > current_batch_data(used_data->begin() + (batch % FLAGS_number_batch_loaded) * FLAGS_batch_size * FLAGS_iter_size, used_data->begin() + ((batch % FLAGS_number_batch_loaded) + 1) * FLAGS_batch_size * FLAGS_iter_size);
 
 				std::vector<std::vector<float> > current_batch_generator;
 
@@ -915,9 +917,9 @@ int main(int argc, char** argv)
 					current_batch_generator.push_back(current_gen_input);
 				}
 
-				nets.Train(current_batch_generator, current_batch_data);
+				nets.Train(current_batch_generator, current_batch_data, FLAGS_model_repository);
 
-				index += FLAGS_batch_size;
+				index += FLAGS_batch_size * FLAGS_iter_size;
 			}
 		}
 

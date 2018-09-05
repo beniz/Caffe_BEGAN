@@ -108,7 +108,8 @@ NN_Agent::~NN_Agent()
 {
 }
 
-void NN_Agent::Train(const std::vector<std::vector<float> > &generator_input, const std::vector<std::vector<float> > &true_data)
+void NN_Agent::Train(const std::vector<std::vector<float> > &generator_input, const std::vector<std::vector<float> > &true_data,
+		     const std::string &model_repo)
 {
 	net_discriminator->ClearParamDiffs();
 	net_generator->ClearParamDiffs();
@@ -159,7 +160,7 @@ void NN_Agent::Train(const std::vector<std::vector<float> > &generator_input, co
 	if ((solver_discriminator->iter() % solver_discriminator->param().snapshot() == 0) && solver_discriminator->iter() > 0)
 	{
 		solver_discriminator->Snapshot();
-		std::ofstream k_t_file("k_t_iter_" + std::to_string(solver_discriminator->iter()) + ".txt");
+		std::ofstream k_t_file(model_repo + "/k_t_iter_" + std::to_string(solver_discriminator->iter()) + ".txt");
 		k_t_file << k_t;
 		k_t_file.close();
 	}
@@ -167,7 +168,7 @@ void NN_Agent::Train(const std::vector<std::vector<float> > &generator_input, co
 	if ((solver_generator->iter() % solver_generator->param().snapshot() == 0) && solver_generator->iter() > 0)
 	{
 		solver_generator->Snapshot();		
-		std::ofstream k_t_file("k_t_iter_" + std::to_string(solver_generator->iter()) + ".txt");
+		std::ofstream k_t_file(model_repo + "/k_t_iter_" + std::to_string(solver_generator->iter()) + ".txt");
 		k_t_file << k_t;
 		k_t_file.close();
 	}

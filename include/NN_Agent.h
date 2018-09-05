@@ -48,8 +48,10 @@ public:
 	* \brief Perform one train cycle on the whole net (generator+discriminator)
 	* \param generator_input One batch of input for the generator
 	* \param true_data One batch of true images for the discriminator
+	* \param model_repo model repository for snapshotting
 	*/
-	void Train(const std::vector<std::vector<float> > &generator_input, const std::vector<std::vector<float> > &true_data);
+	void Train(const std::vector<std::vector<float> > &generator_input, const std::vector<std::vector<float> > &true_data,
+		   const std::string &model_repo);
 
 	/**
 	* \brief Perform one forward pass of the generator
